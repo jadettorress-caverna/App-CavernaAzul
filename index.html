@@ -4791,6 +4791,7 @@ function s3GetEntregaveisHTML() {
       '<span style="font-size:13px;color:#1a1a2e">' + e.label + '</span>' +
       '</label>' +
       '<div id="ent-' + e.id + '-detalhe" style="display:none;margin-top:10px;padding-left:26px">' +
+      '<input type="text" class="ritual-input" id="ent-' + e.id + '-nomeperso" placeholder="Nome que você quer dar a este entregável (ex: ' + e.label + ')" style="font-size:12px;padding:8px 10px;margin-bottom:8px;width:100%">' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
       '<input type="text" class="ritual-input" id="ent-' + e.id + '-periodo" placeholder="Período de acesso" style="font-size:12px;padding:8px 10px">' +
       '<input type="text" class="ritual-input" id="ent-' + e.id + '-canal" placeholder="Canal" style="font-size:12px;padding:8px 10px">' +
@@ -4841,54 +4842,110 @@ function s3RemoverEntregavelExtra(n) {
 }
 
 function s3CamposProgramaMentoria() {
-  var manifesto = '', objetivo = '', publico = '', transformacao = '', pilares = [], estrutura = [];
-  try {
-    var d1 = JSON.parse(localStorage.getItem('s1_caverna_data') || '{}');
-    manifesto = d1['s1-frase'] || '';
-    publico = d1['s1-publico'] || d1['sp-publico'] || '';
-    transformacao = d1['s1-trans'] || d1['sp-trans-ms3'] || '';
-  } catch(e) {}
-  try {
-    var d2 = JSON.parse(localStorage.getItem(S2_KEY) || '{}');
-    objetivo = d2['s2-objetivo'] || '';
-    pilares = d2['pilares'] || [];
-    estrutura = d2['s2-estrutura'] || [];
-  } catch(e) {}
-
-  var sep = '\n' + '='.repeat(40) + '\n';
-  var prompt = 'Ola! Sou uma expert sendo mentorada pela Jade Torres no programa MAR.\n\n' +
-    'Quero estruturar meu Programa de Mentoria com Acompanhamento. Ele entrega: metodologia gravada, acompanhamento por WhatsApp, encontros em grupo e encontros individuais.\n\n' +
-    'Use as informacoes abaixo, que ja construi nas etapas anteriores — nao invente conteudo novo, baseie-se nelas:' +
-    sep + 'MEU MANIFESTO' + sep + '\n' + (manifesto || 'Nao preenchido') + '\n\n' +
-    sep + 'OBJETIVO DO METODO' + sep + '\n' + (objetivo || 'Nao preenchido') + '\n\n' +
-    sep + 'PUBLICO E TRANSFORMACAO' + sep + '\n' + 'Publico: ' + (publico || 'Nao preenchido') + '\nTransformacao: ' + (transformacao || 'Nao preenchido') + '\n\n' +
-    sep + 'PILARES DO METODO' + sep + '\n';
-  if (pilares.length > 0) { pilares.forEach(function(p,i){ prompt += (i+1)+'. '+p+'\n'; }); } else { prompt += 'Nao preenchido\n'; }
-  prompt += '\n' + sep + 'ESTRUTURA DE MODULOS E AULAS' + sep + '\n';
-  if (estrutura.length > 0) {
-    estrutura.forEach(function(mod,i){ prompt += 'Modulo '+(i+1)+': '+mod.nome+'\n'; (mod.aulas||[]).forEach(function(a,j){ prompt += '  Aula '+(j+1)+': '+a+'\n'; }); });
-  } else { prompt += 'Nao preenchido\n'; }
-  prompt += '\n' + sep + 'O QUE PRECISO QUE VOCE ME AJUDE A DECIDIR' + sep + '\n' +
-    '1. Sugira um nome para este Programa de Mentoria\n' +
-    '2. Sugira uma descricao curta e vendedora\n' +
-    '3. Quantos encontros em grupo e quantos individuais fazem sentido, considerando a profundidade do meu metodo\n' +
-    '4. Estrutura basica de cada tipo de encontro\n' +
-    '5. Quais entregaveis a mentorada recebe alem dos encontros (materiais, templates, gravacoes)\n' +
-    '6. Um bonus diferencial que combine com meu manifesto e minha causa\n' +
-    '7. Uma faixa de preco sugerida, com base no formato e na profundidade da entrega';
-
-  return '<div class="prompt-box" style="margin-top:0.5rem">' +
-    '<div class="prompt-box-title">✦ Prompt para ideias do Programa de Mentoria — Copie e leve à sua IA</div>' +
-    '<div class="prompt-text" id="s3-prompt-ia">' + prompt + '</div>' +
-    '<button class="btn-copy-prompt" onclick="s3CopiarPrompt()">⧉ Copiar Prompt IA</button>' +
+  return '<div class="f-group" style="margin-top:0.5rem"><label class="f-label">Nome do Programa <span style="text-transform:none;font-weight:400;letter-spacing:0">(Escolha um nome novo ou use o mesmo nome do seu método.)</span></label><input type="text" class="ritual-input" id="s3-acomp-nome" placeholder="Ex: Método Renascer, Jornada Autoral..."></div>' +
+    s3GetEntregaveisHTML() +
+    '<button class="btn-download btn-dl-primary" style="width:100%;padding:14px;margin-top:1.5rem" onclick="s3GerarPromptApresentacao()">✦ Gerar Prompt do Programa</button>' +
+    '<div id="s3-apresentacao-box" style="display:none;margin-top:1rem">' +
+    '<div class="prompt-box">' +
+    '<div class="prompt-box-title">✦ Prompt do Programa de Mentoria — Copie e leve à sua IA</div>' +
+    '<div class="prompt-text" id="s3-prompt-apresentacao"></div>' +
+    '<button class="btn-copy-prompt" onclick="s3CopiarPromptApresentacao()">⧉ Copiar Prompt IA</button>' +
     '</div>' +
-    '<div style="background:#f4ede2;border:1px solid rgba(180,130,80,0.35);border-radius:14px;padding:1.2rem 1.4rem;margin-top:1.2rem;text-align:left">' +
-    '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8a5f35;margin-bottom:0.6rem">Como fazer</div>' +
-    '<p style="font-size:13px;color:#3a2a1a;line-height:1.7;margin:0">1. Copie o prompt acima.<br>2. Converse com sua IA — sem pressa, sem precisar trazer nada de volta.<br>3. Com as ideias decididas na conversa, preencha os campos abaixo pra montar sua entrega.</p>' +
-    '</div>' +
-    '<div class="f-group" style="margin-top:1.5rem"><label class="f-label">Nome do Programa</label><input type="text" class="ritual-input" id="s3-acomp-nome" placeholder="Ex: Método Renascer, Jornada Autoral..."></div>' +
-    '<div class="f-group" style="margin-top:1rem"><label class="f-label">Promessa</label><textarea class="ritual-textarea" id="s3-acomp-promessa" placeholder="A transformação que sua mentorada recebe, em uma frase vendedora"></textarea></div>' +
-    s3GetEntregaveisHTML();
+    '</div>';
+}
+
+function s3GerarPromptApresentacao() {
+  var nomeEl = document.getElementById('s3-acomp-nome');
+  var nome = nomeEl ? nomeEl.value.trim() : '';
+
+  var mapaLabels = {
+    'boasvindas': 'Boas-vindas / Onboarding',
+    'whatsapp': 'Acompanhamento Individual no WhatsApp',
+    'metodologia': 'Metodologia Gravada',
+    'ferramentas': 'Ferramentas Principais',
+    'grupo': 'Encontros em Grupo',
+    'individual': 'Encontro Individual',
+    'avisos': 'Grupo de Avisos Fechado',
+    'conclusao': 'Encontro de Conclusão do Método'
+  };
+  var blocos = [];
+  Object.keys(mapaLabels).forEach(function(id) {
+    var cb = document.getElementById('ent-' + id);
+    if (cb && cb.checked) {
+      var nomePerso = document.getElementById('ent-' + id + '-nomeperso');
+      var periodo = document.getElementById('ent-' + id + '-periodo');
+      var canal = document.getElementById('ent-' + id + '-canal');
+      var obs = document.getElementById('ent-' + id + '-obs');
+      var nomeFinal = (nomePerso && nomePerso.value.trim()) ? nomePerso.value.trim() : mapaLabels[id];
+      var bloco = '- ' + nomeFinal;
+      if (periodo && periodo.value.trim()) bloco += '\n  Período de acesso: ' + periodo.value.trim();
+      if (canal && canal.value.trim()) bloco += '\n  Canal: ' + canal.value.trim();
+      if (obs && obs.value.trim()) bloco += '\n  Detalhes: ' + obs.value.trim();
+      blocos.push(bloco);
+    }
+  });
+  document.querySelectorAll('[id^="ent-extra-"][id$="-nome"]').forEach(function(nomeExtraEl) {
+    if (!nomeExtraEl.value.trim()) return;
+    var baseId = nomeExtraEl.id.replace('-nome', '');
+    var periodo = document.getElementById(baseId + '-periodo');
+    var canal = document.getElementById(baseId + '-canal');
+    var obs = document.getElementById(baseId + '-obs');
+    var bloco = '- ' + nomeExtraEl.value.trim();
+    if (periodo && periodo.value.trim()) bloco += '\n  Período de acesso: ' + periodo.value.trim();
+    if (canal && canal.value.trim()) bloco += '\n  Canal: ' + canal.value.trim();
+    if (obs && obs.value.trim()) bloco += '\n  Detalhes: ' + obs.value.trim();
+    blocos.push(bloco);
+  });
+
+  var entregaveisTexto = blocos.length > 0
+    ? blocos.join('\n')
+    : '[Nenhum entregável marcado ainda — volte e marque os entregáveis desse programa antes de gerar esse prompt]';
+
+  var prompt = 'Olá! Sou uma expert sendo mentorada pela Jade Torres no Programa MAR.\n\n' +
+    'Já tenho meu método autoral gravado e estruturado. Anexei também o documento HTML do meu método, com todos os módulos e aulas — use esse documento como fonte real pros blocos que falam da minha metodologia. Não invente módulos, nomes ou passo a passo que não estejam nesse documento anexado.\n\n' +
+    'Já decidi os entregáveis do meu Programa de Mentoria com Acompanhamento. Com período de acesso, canal e detalhes de cada um (quando preenchidos), são:\n' + entregaveisTexto + '\n\n' +
+    'Nome do programa: ' + (nome || '[preencher]') + '\n\n' +
+    'Preciso que você crie a promessa desse programa, seguindo esta regra:\n"Transforme [o que ela já tem/faz, sem sistema] em [o mecanismo/método que ela vai construir] e [resultado quantificável], sem [a dor que ela mais quer evitar]."\n\n' +
+    'Além disso, preciso que você:\n' +
+    '1. Confirme ou refine o nome do programa\n' +
+    '2. Se eu incluí encontros em grupo e/ou individuais entre os entregáveis, sugira quantos fazem sentido e a estrutura básica de cada um\n' +
+    '3. Um bônus diferencial que combine com minha causa\n' +
+    '4. Uma faixa de preço sugerida, com base no formato e na profundidade da entrega\n\n' +
+    'Com tudo isso decidido, crie uma APRESENTAÇÃO NAVEGÁVEL EM HTML pra eu apresentar esse programa pra possíveis alunas — sidebar fixa com blocos numerados, barra de progresso, navegação por clique e teclado.\n\n' +
+    'IMPORTANTE: alguns dos nomes de entregáveis acima são específicos da minha mentora Jade Torres (como "Encontros em Grupo" e "Encontro Individual", que na jornada dela têm nomes próprios). Sugira nomes que combinem com a minha própria marca e identidade — não repita os nomes originais dela.\n\n' +
+    'Estruture a apresentação nestes blocos, nesta ordem:\n' +
+    '1. Abertura / Promessa (a transformação principal, em uma frase de impacto)\n' +
+    '2. Pra quem é / pra quem não é esse programa\n' +
+    '3. O problema que meu programa resolve\n' +
+    '4. Quem sou eu (breve — quem é a criadora do método, o que a credencia)\n' +
+    '5. O programa (nome e promessa em uma frase)\n' +
+    '6. A metodologia passo a passo (módulo por módulo, puxando os nomes reais do documento anexado)\n' +
+    '7. O que a aluna recebe (os entregáveis listados acima)\n' +
+    '8. Como funciona (formato, duração, cronograma)\n' +
+    '9. Investimento\n' +
+    '10. Próximos passos\n\n' +
+    'Decida entre modo escuro (pra eu projetar numa call de vendas) ou modo claro (pra eu enviar depois por WhatsApp) — ou pergunte qual eu prefiro. Use minha própria identidade visual, não a da Caverna das Guerreiras. Se você não souber minha paleta ainda, me pergunte antes de construir.';
+
+  var el = document.getElementById('s3-prompt-apresentacao');
+  if (el) el.textContent = prompt;
+  var box = document.getElementById('s3-apresentacao-box');
+  if (box) box.style.display = 'block';
+}
+
+function s3CopiarPromptApresentacao() {
+  var el = document.getElementById('s3-prompt-apresentacao');
+  if (!el) return;
+  var txt = el.textContent;
+  var btn = document.querySelector('#s3-apresentacao-box .btn-copy-prompt');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function(){
+      if(btn){ btn.textContent='✓ Copiado!'; setTimeout(function(){ btn.textContent='⧉ Copiar Prompt IA'; },2000); }
+    });
+  } else {
+    var ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');if(btn){btn.textContent='✓ Copiado!';setTimeout(function(){btn.textContent='⧉ Copiar Prompt IA';},2000);}}catch(e){}
+    document.body.removeChild(ta);
+  }
 }
 
 function s3CopiarPrompt() {
@@ -4980,8 +5037,9 @@ function s3ImprimirAtual() {
   conteudo.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) {
     var lbl = cb.closest('label');
     var span = lbl ? lbl.querySelector('span:last-child') : null;
-    var nomeEnt = span ? span.textContent : cb.id;
     var baseId = cb.id.replace('ent-', '');
+    var nomePerso = document.getElementById('ent-' + baseId + '-nomeperso');
+    var nomeEnt = (nomePerso && nomePerso.value.trim()) ? nomePerso.value.trim() : (span ? span.textContent : cb.id);
     var periodo = document.getElementById('ent-' + baseId + '-periodo');
     var canal = document.getElementById('ent-' + baseId + '-canal');
     var obs = document.getElementById('ent-' + baseId + '-obs');
@@ -5419,9 +5477,13 @@ function s3BuildGrid(c) {
   ];
   grid.innerHTML = '';
   produtos.forEach(function(p) {
+    var destaque = (p.tipo === 'metodo' && p.subtipo === 'acompanhamento');
     var card = document.createElement('div');
-    card.style.cssText = 'background:#f4ede2;border:1px solid rgba(180,130,80,0.3);border-radius:16px;overflow:hidden;cursor:pointer;transition:all 0.3s;display:flex;flex-direction:column;height:100%';
+    card.style.cssText = destaque
+      ? 'background:#f4ede2;border:2px solid #b48250;border-radius:16px;overflow:hidden;cursor:pointer;transition:all 0.3s;display:flex;flex-direction:column;height:100%;position:relative;box-shadow:0 0 24px rgba(180,130,80,0.45),0 8px 24px rgba(0,0,0,0.15)'
+      : 'background:#f4ede2;border:1px solid rgba(180,130,80,0.3);border-radius:16px;overflow:hidden;cursor:pointer;transition:all 0.3s;display:flex;flex-direction:column;height:100%';
     card.innerHTML =
+      (destaque ? '<div style="position:absolute;top:26px;right:-32px;transform:rotate(45deg);background:#2D6CDF;color:#f5f0e8;font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;padding:4px 40px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">\u2726 Premium</div>' : '') +
       '<div style="padding:1.2rem 1.5rem 1.2rem;flex:1">' +
         '<div style="font-family:Playfair Display,serif;font-size:1.1rem;color:#05112b;margin-bottom:0.4rem"><span style="font-size:1.3rem;margin-right:8px;vertical-align:middle">' + p.icone + '</span>' + p.titulo + '</div>' +
         '<div style="font-size:12px;color:rgba(5,17,43,0.6);line-height:1.5;margin-bottom:0.5rem">' + p.desc + '</div>' +
@@ -5429,8 +5491,8 @@ function s3BuildGrid(c) {
       '<div style="padding:0.9rem 1.5rem;background:#05112b">' +
         '<span style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#b48250">\u2726 Construir produto</span>' +
       '</div>';
-    card.addEventListener('mouseenter', function(){ this.style.borderColor='rgba(180,130,80,0.6)'; this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 32px rgba(0,0,0,0.18)'; });
-    card.addEventListener('mouseleave', function(){ this.style.borderColor='rgba(180,130,80,0.3)'; this.style.transform='none'; this.style.boxShadow='none'; });
+    card.addEventListener('mouseenter', function(){ this.style.borderColor= destaque ? '#c9975e' : 'rgba(180,130,80,0.6)'; this.style.transform='translateY(-4px)'; this.style.boxShadow= destaque ? '0 0 32px rgba(180,130,80,0.6),0 12px 32px rgba(0,0,0,0.18)' : '0 12px 32px rgba(0,0,0,0.18)'; });
+    card.addEventListener('mouseleave', function(){ this.style.borderColor= destaque ? '#b48250' : 'rgba(180,130,80,0.3)'; this.style.transform='none'; this.style.boxShadow= destaque ? '0 0 24px rgba(180,130,80,0.45),0 8px 24px rgba(0,0,0,0.15)' : 'none'; });
     card.addEventListener('click', function(){ s3AbrirProduto(p.tipo, p.subtipo, p.icone, p.titulo); });
     grid.appendChild(card);
   });
