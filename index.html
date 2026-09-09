@@ -1626,20 +1626,18 @@ function spGetPromptE2() {
 function spGetPromptE3() {
   return 'Com base na minha história que compartilhei, responda as perguntas abaixo sobre os Ingredientes do meu Produto.\n\nResponda na primeira pessoa, de forma específica e fiel à minha história. Não seja genérica.\n\n' +
     SPRINT_FORMATO +
-    'PROBLEMA: (Qual a principal dor que você resolve? O que sua cliente sente antes de te encontrar?)\n' +
-    'PROVA: (Alguém já foi transformado por essa solução — mesmo que informalmente? Descreva um caso real ou ilustrativo.)\n' +
-    'FERRAMENTA: (Qual o método, material ou fundamento principal que você usa para entregar essa transformação?)\n' +
-    'PUBLICOALVO: (Qual o perfil detalhado da pessoa que você ajuda — idade, momento de vida, o que ela já tentou, o que ela deseja?)\n' +
-    'TRANSFORMACAOPRINCIPAL: (Qual a transformação concreta que a pessoa alcança depois do seu método? Como ela fica?)\n' +
-    'PRODUTO: (Como você entrega esse conteúdo — mentoria, curso, grupo? Em quais formatos?)\n' +
-    'TEMPO: (Em quanto tempo a pessoa alcança o resultado principal? Ex: 30 dias, 3 meses, 6 meses.)\n\n' +
+    'PROBLEMA: (campo "Problema Principal que Resolve" — qual a principal dor que você resolve? O que sua cliente sente antes de te encontrar?)\n' +
+    'FERRAMENTA: (campo "Ferramenta Principal" — qual o método, material ou fundamento principal que você usa para entregar essa transformação?)\n' +
+    'PUBLICOALVO: (campo "Público Alvo Principal" — qual o perfil detalhado da pessoa que você ajuda — idade, momento de vida, o que ela já tentou, o que ela deseja?)\n' +
+    'TRANSFORMACAOPRINCIPAL: (campo "Transformação Principal" — qual a transformação concreta que a pessoa alcança depois do seu método? Como ela fica?)\n' +
+    'PRODUTO: (campo "Produto Principal" — como você entrega esse conteúdo — mentoria, curso, grupo? Em quais formatos?)\n\n' +
     'Responda APENAS com o formato acima. Sem introdução nem conclusão.';
 }
 
 function spGetPromptE4() {
   return 'Com base na minha história que compartilhei, responda as perguntas abaixo sobre o meu Manifesto Editorial.\n\nResponda na primeira pessoa, com ousadia e fidelidade à minha história. Ouse. Não seja genérica.\n\n' +
     SPRINT_FORMATO +
-    'FRASE: (Qual seria a frase de manifesto que só você poderia dizer — como título de revista, direta e marcante? Ex: "Eu não faço divórcio." / "Dietas não funcionam." / "A coragem de ser feliz aos 40.")\n' +
+    'FRASE: (Qual seria a frase de manifesto que só você poderia dizer — curta, direta, tipo slogan ou título de revista? OBRIGATORIAMENTE uma frase única, sem explicação, no máximo 10 palavras, usando palavras que combinem especificamente com o meu assunto e a minha história — nada genérico que sirva pra qualquer pessoa. Ex: "Eu não faço divórcio." / "Dietas não funcionam." / "Pais atentos, crianças protegidas." / "A coragem de ser feliz aos 40.")\n' +
     'GRITAR: (Se você pudesse gritar uma verdade para o mundo sem filtro, o que seria? O que você quer que as pessoas saibam?)\n' +
     'LEGADO: (Como você quer ser lembrada daqui a 10 anos? O que as pessoas vão falar sobre o seu trabalho e impacto?)\n\n' +
     'Responda APENAS com o formato acima. Sem introdução nem conclusão.';
@@ -1780,7 +1778,10 @@ function imprimirPosicionamento() {
   }
   printArea.innerHTML = html;
   printArea.style.display = 'block';
+  var tituloOriginal = document.title;
+  document.title = 'Sprint de Decisões';
   window.print();
+  document.title = tituloOriginal;
   printArea.style.display = 'none';
 }
 
@@ -1904,7 +1905,10 @@ function imprimirLT() {
   }
   printArea.innerHTML = html;
   printArea.style.display = 'block';
+  var tituloOriginal = document.title;
+  document.title = 'Linha do Tempo';
   window.print();
+  document.title = tituloOriginal;
   printArea.style.display = 'none';
 }
 
@@ -2805,7 +2809,10 @@ function s2ImprimirMetodoT4() {
       '<div style="margin-top:2rem;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #ddd;padding-top:1rem">Programa MAR · Caverna das Guerreiras · Jade Torres</div>' +
     '</div>';
 
+  var tituloOriginal = document.title;
+  document.title = nome || 'Método Autoral';
   window.print();
+  document.title = tituloOriginal;
 
   setTimeout(function() { printArea.innerHTML = ''; }, 1000);
 }
@@ -3701,6 +3708,12 @@ function s1FecharCardJuramento() {
   var card = document.getElementById('cardJuramentoPrint');
   if (card) card.classList.remove('ativo');
 }
+function s1ImprimirJuramento() {
+  var tituloOriginal = document.title;
+  document.title = 'Juramento da Guerreira';
+  window.print();
+  document.title = tituloOriginal;
+}
 function s1Ms1next(){ mGoTo(2); s1Save(); }
 function s1Ms2back(){ mGoTo(1); s1Save(); }
 function s1Ms2next(){ mGoTo(3); s1Save(); }
@@ -3763,7 +3776,10 @@ function s1ImprimirPosicionamentoEmBranco() {
   }
   printArea.innerHTML = html;
   printArea.style.display = 'block';
+  var tituloOriginal = document.title;
+  document.title = 'Sprint de Decisões';
   window.print();
+  document.title = tituloOriginal;
   printArea.style.display = 'none';
 }
 
@@ -3810,7 +3826,10 @@ function s1ImprimirLinhaTempo() {
   }
   printArea.innerHTML = html;
   printArea.style.display = 'block';
+  var tituloOriginal = document.title;
+  document.title = 'Linha do Tempo';
   window.print();
+  document.title = tituloOriginal;
   printArea.style.display = 'none';
 }
 function s1BtnImprimir() {
@@ -3833,7 +3852,10 @@ function s1BtnImprimir() {
     '<div style="font-size:1.3rem;font-weight:700;margin-top:0.5rem">Manifesto Editorial</div>' +
     '</div>' + canvas.outerHTML + '</div>';
   printArea.style.display = 'block';
+  var tituloOriginal = document.title;
+  document.title = 'Manifesto Editorial';
   window.print();
+  document.title = tituloOriginal;
   printArea.style.display = 'none';
 }
 function s_renderBadges(conquistas) {
@@ -3979,7 +4001,12 @@ function bindManifestoEvents() {
   });
 
   // RESULTADO
-  var _bic=c.querySelector('#btnImprimirCanvas'); if(_bic) _bic.addEventListener('click', function() { window.print(); });
+  var _bic=c.querySelector('#btnImprimirCanvas'); if(_bic) _bic.addEventListener('click', function() {
+    var tituloOriginal = document.title;
+    document.title = 'Manifesto Editorial';
+    window.print();
+    document.title = tituloOriginal;
+  });
   var _bej=c.querySelector('#btnEnviarJade'); if(_bej) _bej.addEventListener('click', function() { alert('Em breve esta função enviará seu Canvas para a Jade!'); });
   var _bis2=c.querySelector('#btnIrS2'); if(_bis2) _bis2.addEventListener('click', function() { goHome(); setTimeout(function() { openWeek(2); }, 300); });
   var _brec=c.querySelector('#btnRecomecar'); if(_brec) _brec.addEventListener('click', function() {
@@ -4108,7 +4135,7 @@ function getS2HTML() {
   '<div class="step-screen active" id="s2t1" style="display:block">' +
     '<span class="s-label">PASSO 1 DE 8 · BRAINSTORMING</span>' +
     '<h2 class="s-title">O Caminho da<br><em style="color:#b48250;font-style:italic">Transformação</em></h2>' +
-    '<p class="s-desc">Antes de pedir ajuda à IA, coloque no papel o que está na sua cabeça — atualizado, do seu jeito de hoje. Isso vira o prompt que você vai levar pro mesmo projeto do Claude onde já está sua Linha do Tempo e seu Sprint de Decisões.</p>' +
+    '<p class="s-desc">Antes de pedir ajuda à IA, coloque no papel o que está na sua cabeça — atualizado, do seu jeito de hoje. Isso vira o prompt que você vai levar pro mesmo projeto do Claude onde já está sua Linha do Tempo, seu Sprint de Decisões e seu Manifesto Editorial.</p>' +
     '<div class="f-group"><label class="f-label">O que você quer que sua aluna saia sabendo fazer, na prática?</label><textarea class="f-textarea" id="s2-ensinar" placeholder="Ex: Ela sai sabendo estruturar o método dela em módulos e aulas..."></textarea></div>' +
     '<div class="f-group" style="margin-top:1rem"><label class="f-label">Por que você é a pessoa certa pra ensinar isso?</label><textarea class="f-textarea" id="s2-porque-voce" placeholder="Sua experiência, sua vivência com o tema..."></textarea></div>' +
     '<div class="f-group" style="margin-top:1rem"><label class="f-label">Dores — o que sua aluna sofre hoje, antes de te conhecer? (até 5)</label><textarea class="f-textarea" id="s2-dores" placeholder="Uma por linha..."></textarea></div>' +
@@ -4265,7 +4292,12 @@ function s2ImprimirMetodo() {
   if (!printArea) { printArea = document.createElement('div'); printArea.id='printArea'; printArea.style.cssText='display:none'; document.body.appendChild(printArea); }
   var clone = mv.cloneNode(true); clone.style.display='block';
   printArea.innerHTML = '<div style="font-family:serif;max-width:800px;margin:0 auto;padding:2rem"><div style="text-align:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid #b48250"><div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#b48250">' + s_getNomeMovimento() + '</div><div style="font-size:1.5rem;font-weight:700">Meu Método Autoral</div></div>' + clone.outerHTML + '</div>';
-  printArea.style.display='block'; window.print(); printArea.style.display='none';
+  printArea.style.display='block';
+  var tituloOriginal = document.title;
+  document.title = 'Método Autoral';
+  window.print();
+  document.title = tituloOriginal;
+  printArea.style.display='none';
 }
 function s2GerarPromptArtefato() {
   var c = document.getElementById('weekContent');
@@ -4441,7 +4473,7 @@ function bindS2Events() {
       transformacao = d1['s1-trans'] || d1['sp-trans-ms3'] || '';
     } catch(e) {}
 
-    var prompt1 = 'Olá! Continuando nossa conversa neste mesmo projeto — já temos minha Linha do Tempo e meu Sprint de Decisões aqui.\n\n' +
+    var prompt1 = 'Olá! Continuando nossa conversa neste mesmo projeto — já temos minha Linha do Tempo, meu Sprint de Decisões e meu Manifesto Editorial aqui.\n\n' +
       'Antes de formalizar qualquer coisa, quero conversar com você pra decidir três pontos do meu Método Autoral. Não construa nada em HTML ainda — isso é só o começo de uma conversa.\n\n' +
       '---\n' +
       'MEUS DADOS\n' +
@@ -4542,7 +4574,10 @@ function bindS2Events() {
     clone.style.display = 'block';
     printArea.innerHTML = '<div style="font-family:serif;max-width:800px;margin:0 auto;padding:2rem"><div style="text-align:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid #b48250"><div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#b48250">' + s_getNomeMovimento() + '</div><div style="font-size:1.5rem;font-weight:700">Meu Método Autoral</div></div>' + clone.outerHTML + '</div>';
     printArea.style.display = 'block';
+    var tituloOriginal = document.title;
+    document.title = 'Método Autoral';
     window.print();
+    document.title = tituloOriginal;
     printArea.style.display = 'none';
   });
 }
@@ -4676,7 +4711,10 @@ function s3ImprimirProduto(dados) {
     '<div style="font-size:1.4rem;font-weight:700;margin-top:0.5rem">' + (dados.tipo||'Produto') + ': ' + (dados.nome||'\u2014') + '</div>' +
     '</div>' + dados.conteudo + '</div>';
   printArea.style.display = 'block';
+  var tituloOriginal = document.title;
+  document.title = (dados.nome || 'Produto');
   window.print();
+  document.title = tituloOriginal;
   printArea.style.display = 'none';
 }
 
@@ -5195,7 +5233,10 @@ function s7ImprimirEbook() {
   }
   printArea.innerHTML = html;
   printArea.style.display = 'block';
+  var tituloOriginal = document.title;
+  document.title = '12 Semanas no Ar';
   window.print();
+  document.title = tituloOriginal;
   printArea.style.display = 'none';
 }
 
@@ -6022,7 +6063,7 @@ buildGrid();
       <div class="card-footer-print">@jadeettorress · Caverna das Guerreiras · 2025</div>
     </div>
     <div class="card-acoes-print">
-      <button class="btn-print-now" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+      <button class="btn-print-now" onclick="s1ImprimirJuramento()">🖨 Imprimir / Salvar PDF</button>
       <button class="btn-print-close" onclick="s1FecharCardJuramento()">Fechar</button>
     </div>
   </div>
