@@ -136,6 +136,12 @@ html,body{font-family:'DM Sans',sans-serif;background:#05112b;color:#f0ebe8;min-
 .f-input::placeholder,.f-textarea::placeholder{color:rgba(26,26,46,0.35)}
 .f-textarea{min-height:88px;resize:vertical;line-height:1.6}
 .f-select{appearance:none;cursor:pointer}
+.f-label-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.f-label-row .f-label{margin-bottom:0;flex:1}
+.mic-btn{flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid rgba(180,130,80,0.4);background:#f5f0e8;color:#8a5f35;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;padding:0}
+.mic-btn:hover{background:#ede8da;border-color:#b48250}
+.mic-btn.gravando{background:#c0392b;border-color:#c0392b;color:#fff;animation:micPulse 1.2s infinite}
+@keyframes micPulse{0%{box-shadow:0 0 0 0 rgba(192,57,43,0.5)}70%{box-shadow:0 0 0 8px rgba(192,57,43,0)}100%{box-shadow:0 0 0 0 rgba(192,57,43,0)}}
 .f-select option{background:#071a3e;color:#f0ebe8}
 .f-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .insight{background:rgba(5,17,43,0.06);border:1px solid rgba(180,130,80,0.2);border-left:3px solid #b48250;border-radius:8px;padding:14px 16px;margin-bottom:1.4rem}
@@ -2857,6 +2863,70 @@ function goHome() {
 var S1_KEY = 's1_caverna_data';
 var S1_SCREENS = ['r1','r2','r3','r4','r4b','r5','caminhoA','caminhoB','ltPrompt','ltFinal','r_checkpoint','s1Resultado','s2Checkpoint'];
 
+/* ===== DITADO POR VOZ — LINHA DO TEMPO ===== */
+var s1RecognitionAtual = null;
+var s1CampoDitadoAtivo = null;
+
+function s1DitarSuportado() {
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+function s1PararDitado(btn) {
+  if (btn) { btn.classList.remove('gravando'); btn.textContent = '🎤'; }
+  s1RecognitionAtual = null;
+  s1CampoDitadoAtivo = null;
+}
+
+function s1Ditar(campoId, btn) {
+  if (!s1DitarSuportado()) {
+    alert('Ditado por voz não é suportado neste navegador. Use o Google Chrome ou o Microsoft Edge.');
+    return;
+  }
+  // Clicou de novo no mesmo campo que já está gravando → para
+  if (s1CampoDitadoAtivo === campoId && s1RecognitionAtual) {
+    try { s1RecognitionAtual.stop(); } catch(e) {}
+    return;
+  }
+  // Estava gravando outro campo → para antes de iniciar o novo
+  if (s1RecognitionAtual) {
+    try { s1RecognitionAtual.stop(); } catch(e) {}
+  }
+  var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = new SpeechRec();
+  rec.lang = 'pt-BR';
+  rec.continuous = true;
+  rec.interimResults = false;
+  s1RecognitionAtual = rec;
+  s1CampoDitadoAtivo = campoId;
+  btn.classList.add('gravando');
+  btn.textContent = '⏺';
+
+  rec.onresult = function(e) {
+    var textoNovo = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) textoNovo += e.results[i][0].transcript;
+    }
+    if (textoNovo.trim()) {
+      var el = document.getElementById(campoId);
+      if (el) {
+        el.value = (el.value.trim() ? el.value.trim() + ' ' : '') + textoNovo.trim();
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+  };
+  rec.onerror = function(e) {
+    console.error('Erro no ditado por voz:', e.error);
+    s1PararDitado(btn);
+    if (e.error === 'not-allowed' || e.error === 'permission-denied' || e.error === 'service-not-allowed') {
+      alert('Permita o acesso ao microfone no navegador para usar o ditado por voz.');
+    }
+  };
+  rec.onend = function() { s1PararDitado(btn); };
+
+  try { rec.start(); } catch(e) { s1PararDitado(btn); }
+}
+/* ===== FIM DITADO POR VOZ ===== */
+
 function s1Save() {
   var c = document.getElementById('weekContent');
   if (!c) return;
@@ -3250,7 +3320,7 @@ function getManifestoHTML() {
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem">' +
         '<button onclick="wppEnviarLT()" style="background:linear-gradient(135deg,#25d366,#1aab52);color:#fff;border:none;border-radius:10px;padding:12px 10px;font-size:12px;cursor:pointer;font-weight:600;letter-spacing:0.5px">📲 Enviar para a Jade</button>' +
-        '<button onclick="baixarLT()" style="background:linear-gradient(135deg,#b48250,#8a5f35);color:#f0ebe8;border:none;border-radius:10px;padding:12px 10px;font-size:12px;cursor:pointer;font-weight:600;letter-spacing:0.5px">⤓ Baixar minha LT</button>' +
+        '<button onclick="imprimirLT()" style="background:linear-gradient(135deg,#b48250,#8a5f35);color:#f0ebe8;border:none;border-radius:10px;padding:12px 10px;font-size:12px;cursor:pointer;font-weight:600;letter-spacing:0.5px">⤓ Baixar minha LT em PDF</button>' +
       '</div>' +
       '<div class="prompt-box" style="margin-top:0">' +
         '<div class="prompt-box-title">✦ Prompt gerado — Copie e leve ao ChatGPT</div>' +
@@ -5810,76 +5880,76 @@ buildGrid();
   <div class="bloco-linha-tempo">
     <div class="bloco-lt-header">🔹 Bloco 1 — Origem e Contexto</div>
     <div class="bloco-lt-sub">Quem você precisou ser para sobreviver</div>
-    <div class="f-group"><label class="f-label">1. Onde você nasceu e cresceu?</label><textarea class="f-textarea" id="lt1" rows="2" style="min-height:60px" placeholder="Cidade, estado, ambiente..."></textarea></div>
-    <div class="f-group"><label class="f-label">2. Como você descreveria o ambiente da sua casa quando criança?</label><textarea class="f-textarea" id="lt2" rows="2" style="min-height:60px" placeholder="Tranquilo, agitado, amoroso, difícil..."></textarea></div>
-    <div class="f-group"><label class="f-label">3. Dos 0 aos 10 anos, você se sentia mais... (segura, responsável, invisível, cobrada, livre)</label><textarea class="f-textarea" id="lt3" rows="2" style="min-height:60px" placeholder="Explique como se sentia..."></textarea></div>
-    <div class="f-group"><label class="f-label">4. Ainda criança, você sentia que precisava assumir algum papel específico na família?</label><textarea class="f-textarea" id="lt4" rows="2" style="min-height:60px" placeholder="Cuidar de alguém, ser forte, resolver conflitos..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">1. Onde você nasceu e cresceu?</label><button type="button" class="mic-btn" id="mic-lt1" onclick="s1Ditar('lt1',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt1" rows="2" style="min-height:60px" placeholder="Cidade, estado, ambiente..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">2. Como você descreveria o ambiente da sua casa quando criança?</label><button type="button" class="mic-btn" id="mic-lt2" onclick="s1Ditar('lt2',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt2" rows="2" style="min-height:60px" placeholder="Tranquilo, agitado, amoroso, difícil..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">3. Dos 0 aos 10 anos, você se sentia mais... (segura, responsável, invisível, cobrada, livre)</label><button type="button" class="mic-btn" id="mic-lt3" onclick="s1Ditar('lt3',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt3" rows="2" style="min-height:60px" placeholder="Explique como se sentia..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">4. Ainda criança, você sentia que precisava assumir algum papel específico na família?</label><button type="button" class="mic-btn" id="mic-lt4" onclick="s1Ditar('lt4',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt4" rows="2" style="min-height:60px" placeholder="Cuidar de alguém, ser forte, resolver conflitos..."></textarea></div>
   </div>
 
   <!-- BLOCO 2 -->
   <div class="bloco-linha-tempo">
     <div class="bloco-lt-header">🔹 Bloco 2 — Adolescência e Rupturas</div>
     <div class="bloco-lt-sub">Quando você percebeu que precisava se virar</div>
-    <div class="f-group"><label class="f-label">5. Como foi sua adolescência (dos 11 aos 18 anos)?</label><textarea class="f-textarea" id="lt5" rows="2" style="min-height:60px" placeholder="Marcada por quê? Liberdade, cobrança, descobertas..."></textarea></div>
-    <div class="f-group"><label class="f-label">6. Houve algum episódio marcante nessa fase que mudou a forma como você via a vida?</label><textarea class="f-textarea" id="lt6" rows="2" style="min-height:60px" placeholder="Um momento que te transformou..."></textarea></div>
-    <div class="f-group"><label class="f-label">7. Você sentia que precisava dar conta de algo sozinha nessa época? O quê?</label><textarea class="f-textarea" id="lt7" rows="2" style="min-height:60px" placeholder="O que você carregava sozinha..."></textarea></div>
-    <div class="f-group"><label class="f-label">8. O que você aprendeu a fazer sozinha nessa fase da vida?</label><textarea class="f-textarea" id="lt8" rows="2" style="min-height:60px" placeholder="Habilidades que você desenvolveu por necessidade..."></textarea></div>
-    <div class="f-group"><label class="f-label">9. O que você parou de pedir ajuda nessa época, e nunca mais voltou a pedir?</label><textarea class="f-textarea" id="lt9" rows="2" style="min-height:60px" placeholder="Uma vulnerabilidade que você fechou..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">5. Como foi sua adolescência (dos 11 aos 18 anos)?</label><button type="button" class="mic-btn" id="mic-lt5" onclick="s1Ditar('lt5',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt5" rows="2" style="min-height:60px" placeholder="Marcada por quê? Liberdade, cobrança, descobertas..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">6. Houve algum episódio marcante nessa fase que mudou a forma como você via a vida?</label><button type="button" class="mic-btn" id="mic-lt6" onclick="s1Ditar('lt6',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt6" rows="2" style="min-height:60px" placeholder="Um momento que te transformou..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">7. Você sentia que precisava dar conta de algo sozinha nessa época? O quê?</label><button type="button" class="mic-btn" id="mic-lt7" onclick="s1Ditar('lt7',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt7" rows="2" style="min-height:60px" placeholder="O que você carregava sozinha..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">8. O que você aprendeu a fazer sozinha nessa fase da vida?</label><button type="button" class="mic-btn" id="mic-lt8" onclick="s1Ditar('lt8',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt8" rows="2" style="min-height:60px" placeholder="Habilidades que você desenvolveu por necessidade..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">9. O que você parou de pedir ajuda nessa época, e nunca mais voltou a pedir?</label><button type="button" class="mic-btn" id="mic-lt9" onclick="s1Ditar('lt9',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt9" rows="2" style="min-height:60px" placeholder="Uma vulnerabilidade que você fechou..."></textarea></div>
   </div>
 
   <!-- BLOCO 3 -->
   <div class="bloco-linha-tempo">
     <div class="bloco-lt-header">🔹 Bloco 3 — Escolhas Profissionais</div>
     <div class="bloco-lt-sub">Como você tentou se encaixar no mundo</div>
-    <div class="f-group"><label class="f-label">10. Como você escolheu sua primeira profissão ou caminho profissional?</label><textarea class="f-textarea" id="lt10" rows="2" style="min-height:60px" placeholder="O que te levou até essa escolha..."></textarea></div>
-    <div class="f-group"><label class="f-label">11. Essa escolha foi mais influenciada por: desejo pessoal, família, segurança, acaso?</label><textarea class="f-textarea" id="lt11" rows="2" style="min-height:60px" placeholder="Seja honesta sobre o que motivou..."></textarea></div>
-    <div class="f-group"><label class="f-label">12. Em quais trabalhos ou experiências você mais se destacou?</label><textarea class="f-textarea" id="lt12" rows="2" style="min-height:60px" placeholder="Onde você brilhou sem perceber..."></textarea></div>
-    <div class="f-group"><label class="f-label">13. Em quais experiências você mais se frustrou ou sentiu que não cabia?</label><textarea class="f-textarea" id="lt13" rows="2" style="min-height:60px" placeholder="Onde você se sentiu fora do lugar..."></textarea></div>
-    <div class="f-group"><label class="f-label">14. O que você fazia bem, mas nunca foi reconhecida como algo realmente valioso?</label><textarea class="f-textarea" id="lt14" rows="2" style="min-height:60px" placeholder="Um talento que você minimizou..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">10. Como você escolheu sua primeira profissão ou caminho profissional?</label><button type="button" class="mic-btn" id="mic-lt10" onclick="s1Ditar('lt10',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt10" rows="2" style="min-height:60px" placeholder="O que te levou até essa escolha..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">11. Essa escolha foi mais influenciada por: desejo pessoal, família, segurança, acaso?</label><button type="button" class="mic-btn" id="mic-lt11" onclick="s1Ditar('lt11',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt11" rows="2" style="min-height:60px" placeholder="Seja honesta sobre o que motivou..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">12. Em quais trabalhos ou experiências você mais se destacou?</label><button type="button" class="mic-btn" id="mic-lt12" onclick="s1Ditar('lt12',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt12" rows="2" style="min-height:60px" placeholder="Onde você brilhou sem perceber..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">13. Em quais experiências você mais se frustrou ou sentiu que não cabia?</label><button type="button" class="mic-btn" id="mic-lt13" onclick="s1Ditar('lt13',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt13" rows="2" style="min-height:60px" placeholder="Onde você se sentiu fora do lugar..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">14. O que você fazia bem, mas nunca foi reconhecida como algo realmente valioso?</label><button type="button" class="mic-btn" id="mic-lt14" onclick="s1Ditar('lt14',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt14" rows="2" style="min-height:60px" placeholder="Um talento que você minimizou..."></textarea></div>
   </div>
 
   <!-- BLOCO 4 -->
   <div class="bloco-linha-tempo">
     <div class="bloco-lt-header">🔹 Bloco 4 — Experiências que Viraram Competência</div>
     <div class="bloco-lt-sub">Onde você virou especialista sem perceber</div>
-    <div class="f-group"><label class="f-label">15. Que tipo de problema as pessoas costumam trazer para você?</label><textarea class="f-textarea" id="lt15" rows="2" style="min-height:60px" placeholder="O que as pessoas pedem sua ajuda ou opinião..."></textarea></div>
-    <div class="f-group"><label class="f-label">16. Em quais situações você costuma ser vista como a referência?</label><textarea class="f-textarea" id="lt16" rows="2" style="min-height:60px" placeholder="Quando as pessoas te procuram como exemplo..."></textarea></div>
-    <div class="f-group"><label class="f-label">17. O que você resolve com facilidade, mas tende a achar que todo mundo sabe fazer?</label><textarea class="f-textarea" id="lt17" rows="2" style="min-height:60px" placeholder="Um dom que você banaliza..."></textarea></div>
-    <div class="f-group"><label class="f-label">18. Se alguém tivesse te observado em silêncio por 10 anos, pelo que diria que você é muito boa?</label><textarea class="f-textarea" id="lt18" rows="2" style="min-height:60px" placeholder="O que fica evidente em você para quem te observa..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">15. Que tipo de problema as pessoas costumam trazer para você?</label><button type="button" class="mic-btn" id="mic-lt15" onclick="s1Ditar('lt15',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt15" rows="2" style="min-height:60px" placeholder="O que as pessoas pedem sua ajuda ou opinião..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">16. Em quais situações você costuma ser vista como a referência?</label><button type="button" class="mic-btn" id="mic-lt16" onclick="s1Ditar('lt16',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt16" rows="2" style="min-height:60px" placeholder="Quando as pessoas te procuram como exemplo..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">17. O que você resolve com facilidade, mas tende a achar que todo mundo sabe fazer?</label><button type="button" class="mic-btn" id="mic-lt17" onclick="s1Ditar('lt17',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt17" rows="2" style="min-height:60px" placeholder="Um dom que você banaliza..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">18. Se alguém tivesse te observado em silêncio por 10 anos, pelo que diria que você é muito boa?</label><button type="button" class="mic-btn" id="mic-lt18" onclick="s1Ditar('lt18',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt18" rows="2" style="min-height:60px" placeholder="O que fica evidente em você para quem te observa..."></textarea></div>
   </div>
 
   <!-- BLOCO 5 -->
   <div class="bloco-linha-tempo">
     <div class="bloco-lt-header">🔹 Bloco 5 — Presente e Incômodo</div>
     <div class="bloco-lt-sub">Onde está o atrito atual</div>
-    <div class="f-group"><label class="f-label">19. Com o que você trabalha hoje?</label><textarea class="f-textarea" id="lt19" rows="2" style="min-height:60px" placeholder="Sua ocupação atual..."></textarea></div>
-    <div class="f-group"><label class="f-label">20. O que no seu trabalho atual mais te cansa ou pesa?</label><textarea class="f-textarea" id="lt20" rows="2" style="min-height:60px" placeholder="O que drena sua energia..."></textarea></div>
-    <div class="f-group"><label class="f-label">21. O que ainda te mantém nesse lugar hoje?</label><textarea class="f-textarea" id="lt21" rows="2" style="min-height:60px" placeholder="O que te segura onde está..."></textarea></div>
-    <div class="f-group"><label class="f-label">22. O que você sente que está sendo desperdiçado em você atualmente?</label><textarea class="f-textarea" id="lt22" rows="2" style="min-height:60px" placeholder="Um potencial que não está sendo usado..."></textarea></div>
-    <div class="f-group"><label class="f-label">23. Se você continuasse exatamente como está por mais 5 anos, o que te doeria admitir?</label><textarea class="f-textarea" id="lt23" rows="2" style="min-height:60px" placeholder="A verdade que você evita pensar..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">19. Com o que você trabalha hoje?</label><button type="button" class="mic-btn" id="mic-lt19" onclick="s1Ditar('lt19',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt19" rows="2" style="min-height:60px" placeholder="Sua ocupação atual..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">20. O que no seu trabalho atual mais te cansa ou pesa?</label><button type="button" class="mic-btn" id="mic-lt20" onclick="s1Ditar('lt20',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt20" rows="2" style="min-height:60px" placeholder="O que drena sua energia..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">21. O que ainda te mantém nesse lugar hoje?</label><button type="button" class="mic-btn" id="mic-lt21" onclick="s1Ditar('lt21',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt21" rows="2" style="min-height:60px" placeholder="O que te segura onde está..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">22. O que você sente que está sendo desperdiçado em você atualmente?</label><button type="button" class="mic-btn" id="mic-lt22" onclick="s1Ditar('lt22',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt22" rows="2" style="min-height:60px" placeholder="Um potencial que não está sendo usado..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">23. Se você continuasse exatamente como está por mais 5 anos, o que te doeria admitir?</label><button type="button" class="mic-btn" id="mic-lt23" onclick="s1Ditar('lt23',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt23" rows="2" style="min-height:60px" placeholder="A verdade que você evita pensar..."></textarea></div>
   </div>
 
   <!-- BLOCO 6 -->
   <div class="bloco-linha-tempo">
     <div class="bloco-lt-header">🔹 Bloco 6 — Significado e Legado</div>
     <div class="bloco-lt-sub">Onde nasce o seu assunto principal</div>
-    <div class="f-group"><label class="f-label">24. Que tipo de mulher você sente que pode ajudar hoje?</label><textarea class="f-textarea" id="lt24" rows="2" style="min-height:60px" placeholder="Quem é essa mulher que você quer transformar..."></textarea></div>
-    <div class="f-group"><label class="f-label">25. Que dor você entende profundamente por experiência, não por estudo?</label><textarea class="f-textarea" id="lt25" rows="2" style="min-height:60px" placeholder="Uma dor que você viveu na pele..."></textarea></div>
-    <div class="f-group"><label class="f-label">26. Que transformação você gostaria de facilitar na vida de outras pessoas?</label><textarea class="f-textarea" id="lt26" rows="2" style="min-height:60px" placeholder="O que você quer ver acontecer nas vidas que toca..."></textarea></div>
-    <div class="f-group"><label class="f-label">27. Se a sua história pudesse servir para evitar que alguém passe pelo que você passou, sobre o que essa história seria?</label><textarea class="f-textarea" id="lt27" rows="2" style="min-height:60px" placeholder="A essência do que você tem a ensinar..."></textarea></div>
-    <div class="f-group"><label class="f-label">28. Você já ajudou alguém com esse assunto, mesmo que informalmente? Qual foi o resultado?</label><textarea class="f-textarea" id="lt28" rows="2" style="min-height:60px" placeholder="Pode ser uma amiga, colega, familiar — qualquer resultado conta..."></textarea></div>
-    <div class="f-group"><label class="f-label">29. Se você fosse criar um produto hoje para entregar esse conhecimento, como seria o formato? (mentoria, curso, consultoria, grupo...)</label><textarea class="f-textarea" id="lt29" rows="2" style="min-height:60px" placeholder="Como você imagina entregando esse conteúdo..."></textarea></div>
-    <div class="f-group"><label class="f-label">30. Em quanto tempo você acredita que consegue gerar uma transformação real em alguém com esse assunto?</label><textarea class="f-textarea" id="lt30" rows="2" style="min-height:60px" placeholder="Ex: 30 dias, 3 meses, 6 meses..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">24. Que tipo de mulher você sente que pode ajudar hoje?</label><button type="button" class="mic-btn" id="mic-lt24" onclick="s1Ditar('lt24',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt24" rows="2" style="min-height:60px" placeholder="Quem é essa mulher que você quer transformar..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">25. Que dor você entende profundamente por experiência, não por estudo?</label><button type="button" class="mic-btn" id="mic-lt25" onclick="s1Ditar('lt25',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt25" rows="2" style="min-height:60px" placeholder="Uma dor que você viveu na pele..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">26. Que transformação você gostaria de facilitar na vida de outras pessoas?</label><button type="button" class="mic-btn" id="mic-lt26" onclick="s1Ditar('lt26',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt26" rows="2" style="min-height:60px" placeholder="O que você quer ver acontecer nas vidas que toca..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">27. Se a sua história pudesse servir para evitar que alguém passe pelo que você passou, sobre o que essa história seria?</label><button type="button" class="mic-btn" id="mic-lt27" onclick="s1Ditar('lt27',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt27" rows="2" style="min-height:60px" placeholder="A essência do que você tem a ensinar..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">28. Você já ajudou alguém com esse assunto, mesmo que informalmente? Qual foi o resultado?</label><button type="button" class="mic-btn" id="mic-lt28" onclick="s1Ditar('lt28',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt28" rows="2" style="min-height:60px" placeholder="Pode ser uma amiga, colega, familiar — qualquer resultado conta..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">29. Se você fosse criar um produto hoje para entregar esse conhecimento, como seria o formato? (mentoria, curso, consultoria, grupo...)</label><button type="button" class="mic-btn" id="mic-lt29" onclick="s1Ditar('lt29',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt29" rows="2" style="min-height:60px" placeholder="Como você imagina entregando esse conteúdo..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">30. Em quanto tempo você acredita que consegue gerar uma transformação real em alguém com esse assunto?</label><button type="button" class="mic-btn" id="mic-lt30" onclick="s1Ditar('lt30',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt30" rows="2" style="min-height:60px" placeholder="Ex: 30 dias, 3 meses, 6 meses..."></textarea></div>
   </div>
 
   <!-- BLOCO 7 -->
   <div class="bloco-linha-tempo">
     <div class="bloco-lt-header">🔹 Bloco 7 — Formação e Direção</div>
     <div class="bloco-lt-sub">A ponte entre quem você foi e onde quer atuar</div>
-    <div class="f-group"><label class="f-label">31. Conte a linha do tempo da sua formação — no que você se formou, quais cursos e especializações fez ao longo do caminho, e o que isso te ensinou sobre você mesma.</label><textarea class="f-textarea" id="lt31" rows="6" style="min-height:160px" placeholder="Formação acadêmica, cursos, certificações, o que cada um te acrescentou..."></textarea></div>
-    <div class="f-group"><label class="f-label">32. Hoje, qual área você sente que quer levar para o digital, ou já está atuando com ela? E dentro dela, existe um recorte específico, um tipo de pessoa onde você sente que tem mais propriedade que a maioria?</label><textarea class="f-textarea" id="lt32" rows="6" style="min-height:160px" placeholder="A área maior, e depois o recorte mais específico dentro dela..."></textarea></div>
-    <div class="f-group"><label class="f-label">33. Complete sem pensar muito: eu acredito que toda mulher tem o direito de...</label><textarea class="f-textarea" id="lt33" rows="2" style="min-height:60px" placeholder="A primeira coisa que vier à cabeça..."></textarea></div>
-    <div class="f-group"><label class="f-label">34. Qual método, técnica ou fundamento você mais usa no dia a dia para levar alguém do problema até o resultado que ela busca?</label><textarea class="f-textarea" id="lt34" rows="4" style="min-height:110px" placeholder="A ferramenta, técnica ou processo que você mais recorre..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">31. Conte a linha do tempo da sua formação — no que você se formou, quais cursos e especializações fez ao longo do caminho, e o que isso te ensinou sobre você mesma.</label><button type="button" class="mic-btn" id="mic-lt31" onclick="s1Ditar('lt31',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt31" rows="6" style="min-height:160px" placeholder="Formação acadêmica, cursos, certificações, o que cada um te acrescentou..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">32. Hoje, qual área você sente que quer levar para o digital, ou já está atuando com ela? E dentro dela, existe um recorte específico, um tipo de pessoa onde você sente que tem mais propriedade que a maioria?</label><button type="button" class="mic-btn" id="mic-lt32" onclick="s1Ditar('lt32',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt32" rows="6" style="min-height:160px" placeholder="A área maior, e depois o recorte mais específico dentro dela..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">33. Complete sem pensar muito: eu acredito que toda mulher tem o direito de...</label><button type="button" class="mic-btn" id="mic-lt33" onclick="s1Ditar('lt33',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt33" rows="2" style="min-height:60px" placeholder="A primeira coisa que vier à cabeça..."></textarea></div>
+    <div class="f-group"><div class="f-label-row"><label class="f-label" style="margin-bottom:0">34. Qual método, técnica ou fundamento você mais usa no dia a dia para levar alguém do problema até o resultado que ela busca?</label><button type="button" class="mic-btn" id="mic-lt34" onclick="s1Ditar('lt34',this)" title="Ditar por voz">🎤</button></div><textarea class="f-textarea" id="lt34" rows="4" style="min-height:110px" placeholder="A ferramenta, técnica ou processo que você mais recorre..."></textarea></div>
   </div>
 
   <div class="nav-btns" style="margin-top:1.5rem">
@@ -5913,7 +5983,7 @@ buildGrid();
     <h2 class="s-title" style="margin-bottom:1rem">Parabéns, guerreira!<br><em style="color:#b48250;font-style:italic">Sua Linha do Tempo está pronta</em></h2>
     <p style="font-size:15px;color:#3a2a1a;line-height:1.8;margin-bottom:2rem;text-align:left">Agora antes de seguir, baixa e guarda esse material; você vai usar no seu projeto do Claude.</p>
     <div style="margin-bottom:1.5rem">
-      <button onclick="baixarLT()" style="width:100%;background:linear-gradient(135deg,#b48250,#8a5f35);color:#f0ebe8;border:none;border-radius:10px;padding:14px 10px;font-size:13px;cursor:pointer;font-weight:600;letter-spacing:0.5px;box-shadow:0 4px 12px rgba(180,130,80,0.3)">⤓ Baixar minha LT<br><span style="font-size:10px;font-weight:400;opacity:0.9">guarda na pasta do seu projeto</span></button>
+      <button onclick="imprimirLT()" style="width:100%;background:linear-gradient(135deg,#b48250,#8a5f35);color:#f0ebe8;border:none;border-radius:10px;padding:14px 10px;font-size:13px;cursor:pointer;font-weight:600;letter-spacing:0.5px;box-shadow:0 4px 12px rgba(180,130,80,0.3)">⤓ Baixar minha LT em PDF<br><span style="font-size:10px;font-weight:400;opacity:0.9">guarda na pasta do seu projeto</span></button>
     </div>
     <div class="nav-btns" style="justify-content:center">
       <button class="btn-bk" onclick="s1GoTo('ltPrompt')">← Voltar</button>
