@@ -3368,7 +3368,6 @@ function getManifestoHTML() {
         '<div class="s1-proxima-desc">Guerreira, seu Manifesto está pronto. Agora é hora de transformar sua causa em método. Sua próxima batalha te espera.</div>' +
         '<button class="btn-proxima" id="btnIrS2" onclick="s1BtnIrS2()">⚔ Partir para o Método →</button>' +
       '</div>' +
-      '<button class="btn-recomecar" id="btnRecomecar" onclick="s1BtnRecomecar()">↺ Recomeçar minha jornada</button>' +
     '</div>' +
   '</div>' +
 
@@ -4000,23 +3999,6 @@ function s1AtualizarCardPortal() {
 
 function s1BtnEnviar(){ alert('Em breve esta função enviará seu Canvas para a Jade!'); }
 function s1BtnIrS2(){ goHome(); setTimeout(function(){ openWeek(4); }, 300); }
-function s1BtnRecomecar(){
-  s1Modal({
-    icone: '↺',
-    titulo: 'Recomeçar do início?',
-    texto: 'Todas as suas respostas serão apagadas.',
-    confirmar: 'Sim, recomeçar',
-    cancelar: 'Cancelar',
-    onConfirmar: function() {
-      s1ClearSaved();
-      var c = document.getElementById('weekContent');
-      if(c) c.querySelectorAll('input, textarea').forEach(function(el){ el.value=''; });
-      var label = c && c.querySelector('#s1-nome-label');
-      if(label) label.textContent = 'Qual é o seu nome, guerreira?';
-      s1GoTo('r1');
-    }
-  });
-}
 function s1VoltarCaminhos(){ s1GoTo('r5'); }
 function s1Bback(){ s1GoTo('r5'); }
 function s1Bnext(){ s1GoTo('caminhoA'); s1Save(); }
@@ -4038,7 +4020,6 @@ function bindManifestoEvents() {
     if (id === 'btnImprimirCanvas') { s1BtnImprimir(); return; }
     if (id === 'btnEnviarJade') { s1MarcarConcluida(); return; }
     if (id === 'btnIrS2') { s1BtnIrS2(); return; }
-    if (id === 'btnRecomecar') { s1BtnRecomecar(); return; }
   });
 
   // Auto-save via event delegation — captura todos os campos mesmo os ocultos
@@ -4079,15 +4060,6 @@ function bindManifestoEvents() {
   });
   var _bej=c.querySelector('#btnEnviarJade'); if(_bej) _bej.addEventListener('click', function() { alert('Em breve esta função enviará seu Canvas para a Jade!'); });
   var _bis2=c.querySelector('#btnIrS2'); if(_bis2) _bis2.addEventListener('click', function() { goHome(); setTimeout(function() { openWeek(2); }, 300); });
-  var _brec=c.querySelector('#btnRecomecar'); if(_brec) _brec.addEventListener('click', function() {
-    if (confirm('Tem certeza que quer recomeçar? Todas as suas respostas serão apagadas.')) {
-      s1ClearSaved();
-      c.querySelectorAll('input, textarea').forEach(function(el) { el.value = ''; });
-      var label = c.querySelector('#s1-nome-label');
-      if (label) label.textContent = 'Qual é o seu nome, guerreira?';
-      s1GoTo('r1');
-    }
-  });
 
   // CAMINHO B
   function atualizarBPrompt() {
@@ -6096,7 +6068,6 @@ buildGrid();
       <div class="s1-proxima-desc">Guerreira, seu Manifesto está pronto. Agora é hora de transformar sua causa em método. Sua próxima batalha te espera.</div>
       <button class="btn-proxima" id="btnIrS2" onclick="s1BtnIrS2()">⚔ Partir para o Método →</button>
     </div>
-    <button class="btn-recomecar" id="btnRecomecar" onclick="s1BtnRecomecar()">↺ Recomeçar minha jornada</button>
   </div>
 </div>
 </div>
