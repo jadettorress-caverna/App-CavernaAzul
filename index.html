@@ -1670,28 +1670,38 @@ function spCopiarPrompt(etapa) {
   }
 }
 
+function spNormalizarChave(s) {
+  return (s || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove acentos
+    .replace(/[^A-Za-z0-9]/g, '') // remove espaços, pontuação etc.
+    .toUpperCase();
+}
+
 function spDistribuir(etapa) {
   var c = document.getElementById('weekContent');
   if (!c) return;
   var campo = c.querySelector('#sp-cola-' + etapa);
   if (!campo || !campo.value.trim()) return;
-  
+
   var texto = campo.value;
   var linhas = texto.split('\n');
   var mapa = {
     1: { 'DONS': 's1-dons', 'HABILIDADES': 's1-habilidades', 'EXPERIENCIAS': 's1-experiencias', 'CRENCA': 's1-crenca', 'CAUSA': 's1-causa' },
     2: { 'AREA': 's1-area', 'NICHO': 's1-nicho', 'FATIA': 's1-fatia', 'PUBLICO': 's1-publico', 'TRANSFORMACAO': 's1-trans' },
-    3: { 'PROBLEMA': 'sp-problema', 'FERRAMENTA': 'sp-ferramenta', 'PUBLICOALVO': 'sp-publico', 'TRANSFORMACAOPRINCIPAL': 'sp-trans-ms3', 'PRODUTO': 'sp-produto' },
+    3: { 'PROBLEMA': 'sp-problema', 'FERRAMENTA': 'sp-ferramenta', 'PUBLICOALVO': 'sp-publico', 'PUBLICOPRINCIPAL': 'sp-publico', 'TRANSFORMACAOPRINCIPAL': 'sp-trans-ms3', 'TRANSFORMACAO': 'sp-trans-ms3', 'PRODUTO': 'sp-produto', 'PRODUTOPRINCIPAL': 'sp-produto' },
     4: { 'FRASE': 's1-frase', 'GRITAR': 's1-gritar', 'LEGADO': 's1-legado' }
   };
-  
-  var campos = mapa[etapa];
+
+  // Normaliza as chaves do mapa uma vez (remove acento/espaço, igual ao que faremos com a resposta colada)
+  var camposOriginal = mapa[etapa];
+  var campos = {};
+  Object.keys(camposOriginal).forEach(function(k) { campos[spNormalizarChave(k)] = camposOriginal[k]; });
   var distribuidos = 0;
-  
+
   linhas.forEach(function(linha) {
     var partes = linha.split(':');
     if (partes.length < 2) return;
-    var chave = partes[0].trim().toUpperCase();
+    var chave = spNormalizarChave(partes[0]);
     var valor = partes.slice(1).join(':').trim();
     if (campos[chave] && valor) {
       var el = c.querySelector('#' + campos[chave]);
