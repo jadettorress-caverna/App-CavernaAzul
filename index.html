@@ -3166,11 +3166,11 @@ function s1PreencherResultado() {
   set('r-nome', nome);
   set('r-frase', frase);
   set('r-id', nome + (fatia ? ' — ' + fatia : ''));
-  set('r-ed', trans ? trans.substring(0,120)+(trans.length>120?'...':'') : 'A definir.');
-  set('r-pub', pub ? pub.substring(0,100)+(pub.length>100?'...':'') : 'A definir.');
+  set('r-ed', trans || 'A definir.');
+  set('r-pub', pub || 'A definir.');
   set('r-met', nicho ? 'Através da minha metodologia em '+nicho+'.' : 'Método a ser nomeado.');
-  set('r-cau', causa ? causa.substring(0,120)+(causa.length>120?'...':'') : crenca ? crenca.substring(0,120)+'...' : 'A definir.');
-  set('r-leg', legado ? legado.substring(0,100)+(legado.length>100?'...':'') : '—');
+  set('r-cau', causa || crenca || 'A definir.');
+  set('r-leg', legado || '—');
 
   var pills = c.querySelector('#r-ing');
   if (pills) {
