@@ -2965,7 +2965,10 @@ function s1Ditar(campoId, btn) {
 function s1Save() {
   var c = document.getElementById('weekContent');
   if (!c) return;
+  // MESCLA com o que já estava salvo: em outras etapas (ex: Método Autoral) os campos
+  // das Etapas 1-3 não estão na tela, e substituir tudo apagava nome, espada etc.
   var data = {};
+  try { data = s1GetSaved() || {}; } catch(e) { data = {}; }
   // Salvar todos os campos
   var ids = ['s1-nome','s1-momento','s1-espada','s1-area','s1-nicho','s1-fatia',
     's1-publico','s1-trans','s1-dons','s1-habilidades','s1-experiencias',
@@ -2979,13 +2982,22 @@ function s1Save() {
     if (el) data[id] = el.value;
   });
   // Salvar tela atual — pegar a última tela não-escondida explicitamente
-  var current = 'r1';
+  // (só se as telas das Etapas 1-3 estiverem na tela; senão mantém a que já estava salva)
+  var current = data['s1-current'] || 'r1';
+  var temTelasS1 = false;
   S1_SCREENS.forEach(function(sid) {
     var el = c.querySelector('#'+sid);
-    if (el && el.style.display !== 'none' && el.style.display !== '') {
-      current = sid;
-    }
+    if (el) temTelasS1 = true;
   });
+  if (temTelasS1) {
+    current = 'r1';
+    S1_SCREENS.forEach(function(sid) {
+      var el = c.querySelector('#'+sid);
+      if (el && el.style.display !== 'none' && el.style.display !== '') {
+        current = sid;
+      }
+    });
+  }
   data['s1-current'] = current;
   var json = JSON.stringify(data);
   var saved = false;
@@ -4039,18 +4051,22 @@ function s1Bback(){ s1GoTo('r5'); }
 function s1Bnext(){ s1GoTo('caminhoA'); s1Save(); }
 function bindManifestoEvents() {
   var c = document.getElementById('weekContent');
+  if (!c) { console.error('bindManifestoEvents: weekContent não encontrado!'); return; }
+  // Os listeners do container (#weekContent) duravam para sempre e se acumulavam a cada
+  // etapa aberta (botões disparando 2-3x). Agora são ligados uma única vez.
+  var primeiraVez = !c.__s1Delegado;
+  c.__s1Delegado = true;
   // Auto-save on any input in S1
-  if (c) c.addEventListener('input', function(e){
+  if (primeiraVez) c.addEventListener('input', function(e){
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
       setTimeout(s1Save, 300);
     }
   });
-  if (!c) { console.error('bindManifestoEvents: weekContent não encontrado!'); return; }
   s1MostrarBtnSalvar(true);
   s1AtualizarNavHeader();
 
   // Delegação de cliques — captura botões de telas ocultas (s1Resultado etc)
-  c.addEventListener('click', function(e) {
+  if (primeiraVez) c.addEventListener('click', function(e) {
     var id = e.target.id || '';
     if (id === 'btnImprimirCanvas') { s1BtnImprimir(); return; }
     if (id === 'btnEnviarJade') { s1MarcarConcluida(); return; }
@@ -4058,7 +4074,7 @@ function bindManifestoEvents() {
   });
 
   // Auto-save via event delegation — captura todos os campos mesmo os ocultos
-  c.addEventListener('input', function(e) {
+  if (primeiraVez) c.addEventListener('input', function(e) {
     var id = e.target.id || '';
     // Campos da linha do tempo — atualizar prompt
     if (/^lt\d+$/.test(id)) { s1GerarPromptLT(); }
